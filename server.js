@@ -1,6 +1,7 @@
 // imports
 const express = require("express");
 const mongoose = require("mongoose");
+const Pusher = require("pusher");
 
 const Message = require("./dbMessage");
 
@@ -8,6 +9,18 @@ const Message = require("./dbMessage");
 const app = express();
 const port = process.env.PORT || 9000;
 const DB_URL = "mongodb://localhost/whatsApp";
+
+const pusher = new Pusher({
+    appId: "1135512",
+    key: "19e402f8ecd854e074d2",
+    secret: "1979731cd2d75f530841",
+    cluster: "eu",
+    useTLS: true,
+});
+
+pusher.trigger("my-channel", "my-event", {
+    message: "hello world",
+});
 
 // middlewares
 app.use(express.json());
