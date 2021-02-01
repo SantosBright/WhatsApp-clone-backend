@@ -1,4 +1,5 @@
 // imports
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const Pusher = require("pusher");
@@ -11,9 +12,9 @@ const port = process.env.PORT || 9000;
 const DB_URL = "mongodb://localhost/whatsApp";
 
 const pusher = new Pusher({
-    appId: "1135512",
-    key: "19e402f8ecd854e074d2",
-    secret: "1979731cd2d75f530841",
+    appId: process.env.PUSHER_APP_ID,
+    key: process.env.PUSHER_API_KEY,
+    secret: process.env.PUSHER_API_SECRET,
     cluster: "eu",
     useTLS: true,
 });
@@ -47,14 +48,10 @@ db.once("open", async () => {
     changeStream.on("change", (event) => {
         console.log("change");
         if (event.operationType === "insert") {
-            const { name, message, timestamp } = event.fullDocument;
+            const message = event.fullDocument;
             pusher
-                .trigger("new-message", "inserted", {
-                    name,
-                    message,
-                    timestamp,
-                })
-                .then((data) => console.log(data))
+                .trigger("message", "inserted", message)
+                .then((data) => console.log("event went", data))
                 .catch((err) => console.log(err));
         }
     });
