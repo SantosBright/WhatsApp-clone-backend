@@ -24,18 +24,43 @@ pusher.trigger("my-channel", "my-event", {
 
 // middlewares
 app.use(express.json());
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+    next();
+});
 
 // DB config
-mongoose
-    .connect(DB_URL, {
-        useCreateIndex: true,
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
-    .then(() => console.log("Database connected"))
-    .catch((err) => console.log(`Database not connected ${err}`));
+mongoose.connect(DB_URL, {
+    useCreateIndex: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
-mongoose.Promise = Promise;
+const db = mongoose.connection;
+
+db.once("open", async () => {
+    console.log("database connected");
+    const messsageCollection = db.collection("messages");
+    const changeStream = messsageCollection.watch();
+
+    changeStream.on("change", (event) => {
+        console.log("change");
+        if (event.operationType === "insert") {
+            const { name, message, timestamp } = event.fullDocument;
+            pusher
+                .trigger("new-message", "inserted", {
+                    name,
+                    message,
+                    timestamp,
+                })
+                .then((data) => console.log(data))
+                .catch((err) => console.log(err));
+        }
+    });
+})
+    .then()
+    .catch((err) => console.log(err));
 
 // api routes
 app.get("/", (req, res) => res.status(200).send("hello world"));
